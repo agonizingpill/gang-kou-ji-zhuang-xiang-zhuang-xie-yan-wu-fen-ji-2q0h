@@ -11,14 +11,25 @@ def active_gate_events(db: Session, vessel_id: int):
         )
     ).scalars().all()
 
-def duplicate_gate_refs(db: Session, vessel_id: int):
-    rows = active_gate_events(db, vessel_id)
-    counts = Counter((r.container_id, r.event_type, r.event_time.isoformat()) for r in rows)
-    return [key for key, count in counts.items() if count > 1]
+def lock_vessel(db: Session, vessel_id: int):
+    """Take the per-call write lock used by re-hang confirmation.
 
-def build_features(db: Session, vessel: VesselCall):
-    containers = list(vessel.containers)
-    gates = active_gate_events(db, vessel.id)
+    Manifest and gate mutations for a call take this same row lock, so they
+    either finish before a confirmation reads its evidence or wait until the
+    confirmation commits.  That keeps "evidence unchanged" checks honest.
+    """
+    return db.execute(
+        select(VesselCall).where(VesselCall.id == vessel_id).with_for_update()
+    ).scalar_one_or_none()
+
+def features_from_records(vessel: VesselCall, containers, gates) -> dict:
+    """Compute the manual cross features from an explicit manifest/gate set.
+
+    Re-hang trials use this to evaluate a hypothetical manifest without writing
+    anything, while the normal triage path passes the live records.
+    """
+    containers = list(containers)
+    gates = list(gates)
     dwell = [g.dwell_min for g in gates]
     avg_dwell = round(sum(dwell) / len(dwell), 2) if dwell else 0
     reefer = sum(1 for c in containers if c.iso_type.startswith("R"))
@@ -39,6 +50,14 @@ def build_features(db: Session, vessel: VesselCall):
         "port_call_hour": vessel.eta.hour,
         "window_minutes": max(1, int((vessel.etd - vessel.eta).total_seconds() / 60)),
     }
+
+def duplicate_gate_refs(db: Session, vessel_id: int):
+    rows = active_gate_events(db, vessel_id)
+    counts = Counter((r.container_id, r.event_type, r.event_time.isoformat()) for r in rows)
+    return [key for key, count in counts.items() if count > 1]
+
+def build_features(db: Session, vessel: VesselCall):
+    return features_from_records(vessel, vessel.containers, active_gate_events(db, vessel.id))
 
 def domain_precheck(db: Session, vessel: VesselCall):
     features = build_features(db, vessel)

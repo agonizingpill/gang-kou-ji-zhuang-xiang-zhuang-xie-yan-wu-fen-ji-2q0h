@@ -108,3 +108,45 @@ class AuditLog(Base):
     entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     detail: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+
+
+class RehangTrial(Base):
+    """A supervisor's trial calculation for moving a batch of boxes to another call.
+
+    The evaluation snapshot (before/after severe-delay probabilities for both
+    vessel calls) and the evidence digest are captured once.  Confirmation is
+    only allowed while the digest still matches the live manifest/gate data, so
+    any change during the trial forces a recalculation.
+    """
+
+    __tablename__ = "rehang_trials"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trial_no: Mapped[str] = mapped_column(String(48), unique=True)
+    source_vessel_id: Mapped[int] = mapped_column(ForeignKey("vessel_calls.id"), index=True)
+    target_vessel_id: Mapped[int] = mapped_column(ForeignKey("vessel_calls.id"), index=True)
+    container_ids: Mapped[list] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(20), default="calculated", index=True)
+    evaluation: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    evidence_digest: Mapped[str] = mapped_column(String(64))
+    superseded_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_by: Mapped[str] = mapped_column(String(40))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    confirmed_by: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+
+class RehangConfirmation(Base):
+    """Idempotency ledger for confirmations.
+
+    The unique key makes a retried confirmation (network drop, double click,
+    worker restart) return the original result instead of moving boxes twice.
+    """
+
+    __tablename__ = "rehang_confirmations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trial_id: Mapped[int] = mapped_column(ForeignKey("rehang_trials.id"), index=True)
+    idempotency_key: Mapped[str] = mapped_column(String(80), unique=True)
+    actor: Mapped[str] = mapped_column(String(80))
+    result: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)

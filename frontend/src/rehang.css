@@ -1,0 +1,36 @@
+#rehang-open {position:fixed; right:1.25rem; bottom:8rem; z-index:22; border-radius:.5rem;
+  background:#1f3a5c; color:white; border:1px solid #3b6191; padding:.65rem .9rem; font:inherit; cursor:pointer}
+#rehang-open[hidden] {display:none}
+#rehang {width:min(70rem, calc(100% - 1.5rem)); max-height:calc(100% - 2rem); overflow:auto;
+  border:1px solid #8fa4bd; border-radius:.9rem; padding:1.35rem; background:#f5f8fb; color:#16283a;
+  font:inherit; box-shadow:0 1.2rem 4rem #00152240}
+#rehang::backdrop {background:#0d1c2bcc}
+#rehang header {display:flex; align-items:center; justify-content:space-between; gap:1rem}
+#rehang h2, #rehang h3, #rehang h4 {margin:.4rem 0 .7rem; color:#16283a}
+#rehang button, #rehang select, #rehang input {font:inherit; color:inherit; border:1px solid #8ea2b6;
+  border-radius:.4rem; background:white; padding:.45rem .65rem; min-height:2.2rem; max-width:100%}
+#rehang button {cursor:pointer; background:#e6edf4}
+#rehang button.primary {background:#1f3a5c; color:white; border-color:#1f3a5c}
+#rehang button:disabled {opacity:.55; cursor:not-allowed}
+#rehang button.link {background:none; border:none; padding:0; min-height:0; color:#1f5b93;
+  text-decoration:underline; font:inherit}
+#rehang [role=status] {color:#254a6d; min-height:1.35rem; margin:.35rem 0}
+#rehang .rehang-body {display:grid; gap:1.1rem}
+#rehang section {border:1px solid #c5d3e0; border-radius:.6rem; padding:.9rem 1rem; background:white}
+#rehang .rehang-create form {display:flex; flex-wrap:wrap; gap:.75rem; align-items:end}
+#rehang label {display:flex; flex-direction:column; gap:.35rem; flex:1 1 12rem}
+#rehang fieldset {flex:1 1 100%; border:1px solid #d3dde7; border-radius:.5rem; padding:.6rem .8rem}
+#rehang legend {padding:0 .35rem; color:#3c5b78; font-size:.85rem}
+#rehang .rehang-boxes {display:grid; grid-template-columns:repeat(auto-fill, minmax(17rem, 1fr)); gap:.35rem .9rem}
+#rehang .rehang-boxes label {flex-direction:row; align-items:center; gap:.45rem; font-size:.85rem}
+#rehang table {width:100%; border-collapse:collapse; margin:.5rem 0; font-size:.88rem}
+#rehang th, #rehang td {text-align:left; padding:.4rem .5rem; border-bottom:1px solid #d3dde7; vertical-align:top}
+#rehang th {background:#e8eff6; color:#254a6d; font-weight:600}
+#rehang .rehang-ok {color:#146b4f; border-left:.25rem solid #1c9a72; padding:.45rem .6rem; background:#e8f6f0}
+#rehang .rehang-block {color:#8a2431; border-left:.25rem solid #c2414f; padding:.45rem .6rem; background:#fbeaec}
+#rehang .rehang-warn {color:#8a5a05; border-left:.25rem solid #d39a1e; padding:.45rem .6rem; background:#fdf4dd}
+#rehang .rehang-actions {display:flex; flex-wrap:wrap; gap:.6rem; align-items:center; margin-top:.6rem}
+#rehang .rehang-actions input {flex:1 1 16rem}
+#rehang .rehang-result {margin-top:.8rem; padding:.7rem .85rem; border:1px solid #b9d6c9; border-radius:.5rem; background:#eef8f3}
+#rehang .rehang-result p {margin:.3rem 0}
+#rehang .rehang-history {max-height:22rem; overflow:auto}

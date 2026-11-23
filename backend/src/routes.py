@@ -7,7 +7,7 @@ from .database import redis_client
 from .models import AuditLog, AnalysisJob, ContainerCheck, DelayCase, DispatchAction, GateEvent, User, VesselCall
 from .schemas import ContainerIn, CustomsUpdate, DelayCaseIn, DispatchIn, GateIn, LoginIn, VesselIn
 from .security import current_user, get_db, hash_password, issue_token, require_roles
-from .services import build_features, domain_precheck
+from .services import build_features, domain_precheck, lock_vessel
 
 router = APIRouter(prefix="/api")
 
@@ -56,7 +56,8 @@ def create_vessel(payload: VesselIn, db: Session = Depends(get_db), user: User =
 
 @router.post("/containers")
 def create_container(payload: ContainerIn, db: Session = Depends(get_db), user: User = Depends(require_roles("operator", "supervisor"))):
-    if not db.get(VesselCall, payload.vessel_id): raise HTTPException(404, "船次不存在")
+    vessel = lock_vessel(db, payload.vessel_id)
+    if not vessel: raise HTTPException(404, "船次不存在")
     if db.execute(select(ContainerCheck).where(ContainerCheck.container_no == payload.container_no)).scalar_one_or_none(): raise HTTPException(409, "箱号已存在")
     c = ContainerCheck(**payload.model_dump()); db.add(c); db.flush(); log(db, user, "create_container", "container_check", c.id, payload.container_no); db.commit()
     return {"id": c.id, "container_no": c.container_no, "vessel_id": c.vessel_id}
@@ -65,6 +66,8 @@ def create_container(payload: ContainerIn, db: Session = Depends(get_db), user: 
 def create_gate(payload: GateIn, db: Session = Depends(get_db), user: User = Depends(require_roles("operator", "supervisor"))):
     c = db.get(ContainerCheck, payload.container_id)
     if not c: raise HTTPException(404, "箱单不存在")
+    lock_vessel(db, c.vessel_id)
+    c = db.get(ContainerCheck, payload.container_id)
     g = GateEvent(**payload.model_dump()); db.add(g); db.flush(); log(db, user, "create_gate_event", "gate_event", g.id, payload.event_ref); db.commit()
     return {"id": g.id, "status": g.status, "container_no": c.container_no}
 
@@ -72,6 +75,8 @@ def create_gate(payload: GateIn, db: Session = Depends(get_db), user: User = Dep
 def reverse_gate(gate_id: int, db: Session = Depends(get_db), user: User = Depends(require_roles("supervisor"))):
     g = db.get(GateEvent, gate_id)
     if not g: raise HTTPException(404, "闸口记录不存在")
+    lock_vessel(db, g.container.vessel_id)
+    db.refresh(g)
     if g.status == "reversed": raise HTTPException(409, "记录已冲正")
     g.status = "reversed"; g.note = f"{g.note} | 主管 {user.username} 于 {datetime.now(timezone.utc).isoformat()} 冲正"
     log(db, user, "reverse_gate_event", "gate_event", g.id, g.event_ref); db.commit()
@@ -82,6 +87,8 @@ def update_customs(container_id: int, payload: CustomsUpdate, db: Session = Depe
     if payload.customs_status not in {"pending", "in_progress", "finished"}: raise HTTPException(422, "查验状态不合法")
     c = db.get(ContainerCheck, container_id)
     if not c: raise HTTPException(404, "箱单不存在")
+    lock_vessel(db, c.vessel_id)
+    db.refresh(c)
     c.customs_status = payload.customs_status; c.check_state = "verified" if payload.customs_status == "finished" else "pending"
     log(db, user, "update_customs", "container_check", c.id, payload.customs_status); db.commit()
     return {"id": c.id, "container_no": c.container_no, "customs_status": c.customs_status}

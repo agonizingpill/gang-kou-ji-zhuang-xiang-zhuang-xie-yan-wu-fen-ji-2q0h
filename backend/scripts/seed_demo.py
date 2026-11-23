@@ -21,6 +21,7 @@ def seed():
             ("CALL-TRI-20261121", "天际三号", "海陵港CCT", "C08", dt(21, 8), dt(21, 13), "查验箱集中在上午窗口"),
             ("CALL-PEARL-20261121", "珠江门", "海陵港CCT", "C15", dt(21, 9), dt(21, 16), "危险品箱需单独排队"),
             ("CALL-NORTH-20261121", "北辰航运", "海陵港CCT", "C03", dt(21, 11), dt(21, 19), "晚靠泊，观察潮汐"),
+            ("CALL-LINK-20261121", "海陵接驳", "海陵港CCT", "C16", dt(21, 15), dt(21, 20), "加班接驳船，可接收临时改挂箱"),
         ]
         for call_no, name, terminal, berth, eta, etd, notes in calls:
             if not db.execute(select(VesselCall).where(VesselCall.call_no == call_no)).scalar_one_or_none():
@@ -39,6 +40,10 @@ def seed():
             ("MSCU300003", "CALL-PEARL-20261121", "22G1", "dry", 18.8, "finished"),
             ("MSCU400001", "CALL-NORTH-20261121", "22G1", "dry", 15.2, "finished"),
             ("MSCU400002", "CALL-NORTH-20261121", "45R1", "reefer", 22.2, "finished"),
+            ("MSCU500001", "CALL-LINK-20261121", "22G1", "hazmat", 20.6, "finished"),
+            ("MSCU500002", "CALL-LINK-20261121", "22G1", "hazmat", 21.3, "finished"),
+            ("MSCU500003", "CALL-LINK-20261121", "22G1", "hazmat", 19.8, "finished"),
+            ("MSCU500004", "CALL-LINK-20261121", "22G1", "hazmat", 20.1, "finished"),
         ]
         for no, call_no, iso, cargo, weight, customs in containers:
             if not db.execute(select(ContainerCheck).where(ContainerCheck.container_no == no)).scalar_one_or_none():
@@ -51,6 +56,8 @@ def seed():
             ("MSCU200001", "GATE-T-001", "G08", "in", 31, dt(21, 8, 25)), ("MSCU200002", "GATE-T-002", "G08", "in", 28, dt(21, 8, 32)), ("MSCU200003", "GATE-T-003", "G09", "in", 24, dt(21, 8, 45)),
             ("MSCU300001", "GATE-P-001", "G15", "in", 42, dt(21, 9, 25)), ("MSCU300002", "GATE-P-002", "G15", "in", 38, dt(21, 9, 28)), ("MSCU300003", "GATE-P-003", "G15", "in", 35, dt(21, 9, 36)),
             ("MSCU400001", "GATE-N-001", "G03", "in", 16, dt(21, 11, 20)), ("MSCU400002", "GATE-ERR-77", "G03", "in", 23, dt(21, 11, 25)),
+            ("MSCU500001", "GATE-L-001", "G16", "in", 60, dt(21, 15, 12)), ("MSCU500002", "GATE-L-002", "G16", "in", 58, dt(21, 15, 16)),
+            ("MSCU500003", "GATE-L-003", "G16", "in", 62, dt(21, 15, 21)), ("MSCU500004", "GATE-L-004", "G16", "in", 61, dt(21, 15, 27)),
         ]
         for no, ref, gate, typ, dwell, when in gates:
             if not db.execute(select(GateEvent).where(GateEvent.event_ref == ref)).scalar_one_or_none():
